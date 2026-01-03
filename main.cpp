@@ -1,4 +1,4 @@
-#include <iostream>
+#include <print>
 #include <windows.h>
 #include "C:\Users\aluge\Desktop\Mahers Headerfiles\unique_hotkey.h"
 #include <cstdlib>
@@ -19,20 +19,19 @@ int main()
 
     while (GetMessage(&msg, NULL, 0, 0)) {
         if (msg.message == WM_HOTKEY) {
-            std::system("cls");
+            std::print("\033[2J\033[H");
             GetCursorPos(&p);
             ScreenToClient(game, &p);
             GetClientRect(game, &rect);
             double length = rect.right - rect.left; //wir nutzen Client, Top und Left sind 0 aber zur Übersicht behalt ich das so
             double height = rect.bottom - rect.top;
-            double faktorx = p.x / length; //wie viel ist der Pixel wo wir gerade sind vom ganzen Spiel?
+            double faktorx = p.x / length; 
             double faktory = p.y / height;
-            std::cout << "X Faktor = " << faktorx << " Y Faktor = " << faktory << '\n';
-            std::cout << "X Koordinaten im Client: " << p.x << " Y Koordinaten im Client: " << p.y << '\n' << '\n';
-            p.x = rect.right * faktorx; //das was wir eigentlich machen wollten
+            std::println("X Faktor = {} \nY Faktor = {}\n", faktorx, faktory);
+            p.x = rect.right * faktorx; 
             p.y = rect.bottom * faktory;
             ClientToScreen(game, &p); //das hat die ganze Zeit gefehlt..
-            std::cout << "X Koordinaten in Real: " << p.x << " Y Koordinaten in Real: " << p.y << '\n' << '\n';
+            std::println("X Koordinaten in Real: {} || Y Koordinaten in Real: {}", p.x, p.y);
             SetCursorPos(p.x, p.y);          
         }
     }
