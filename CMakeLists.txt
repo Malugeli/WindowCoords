@@ -1,32 +1,56 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.30)
 
-# WICHTIG: Hier ändern wir auf den Windows-Standard (MSVC)
-# "x64-windows" ist der Standard für Visual Studio
-set(VCPKG_TARGET_TRIPLET "x64-windows")
+project(Coordinates CXX)
 
-project(MeinOpenCVProjekt CXX)
-
-# C++23 Standard aktivieren
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Pakete finden
-find_package(OpenCV REQUIRED)
-find_package(wil CONFIG REQUIRED)
+# Ohne das haengt CMake bei C++23 an jeden g++-Aufruf -fmodules-ts,
+# -fmodule-mapper und -fdeps-format an, um nach Modulen zu scannen.
+# Wir nutzen keine Module: kostet nur Buildzeit und verwirrt clangd.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-# Debug-Info (optional, kannst du drin lassen)
-message(STATUS "DEBUG: OpenCV Include Ordner: ${OpenCV_INCLUDE_DIRS}")
-message(STATUS "DEBUG: OpenCV Bibliotheken: ${OpenCV_LIBS}")
-
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-add_executable(app main.cpp)
-
-# WICHTIG: "stdc++exp" entfernen!
-# Das war eine Spezial-Bibliothek für GCC (MinGW). MSVC braucht die nicht.
-target_link_libraries(app PRIVATE ${OpenCV_LIBS} d3d11 dxgi dwmapi user32 WIL::WIL)
+# ---------------------------------------------------------------------------
+# coordinates_warnings: kompiliert selbst nichts, ist nur ein Bündel
+# Compilerflags mit Namen. Wird an jedes Target gelinkt, das die Flags
+# haben soll — damit steht der if(MSVC)-Block genau einmal im File.
+# ---------------------------------------------------------------------------
+add_library(coordinates_warnings INTERFACE)
 
 if(MSVC)
-    # /utf-8: Setzt Source- und Execution-Charset auf UTF-8
-    add_compile_options(/utf-8)
+    target_compile_options(coordinates_warnings INTERFACE
+        /W4          # Höchstes normales Warnlevel
+        /WX          # Behandelt Warnungen als Fehler
+        /permissive- # Erzwingt strikte C++ Standardkonformität
+    )
+else()
+    target_compile_options(coordinates_warnings INTERFACE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wshadow # Warnt, wenn eine lokale Variable eine äußere überdeckt
+        -Werror  # Macht jede Warnung zu einem echten Fehler
+    )
+endif()
+
+# ---------------------------------------------------------------------------
+# Coordinates: das eigentliche Programm. Nur Windows-API, keine
+# Third-Party-Abhängigkeiten.
+# ---------------------------------------------------------------------------
+add_executable(Coordinates main.cpp)
+
+target_link_libraries(Coordinates PRIVATE coordinates_warnings)
+
+# std::print/std::println liegen bei GCC 14/15 in libstdc++exp, nicht in
+# libstdc++, weil ihr ABI noch nicht stabil ist. Ohne das fehlen
+# __open_terminal/__write_to_terminal.
+target_link_libraries(Coordinates PRIVATE $<$<CXX_COMPILER_ID:GNU>:stdc++exp>)
+
+# MinGW linkt libstdc++/libgcc/libwinpthread standardmaessig als DLL. Statisch
+# gelinkt haengt die Exe an gar keiner davon und laeuft auf jedem Windows-Rechner
+# ohne DLL-Hell. Windows-MinGW-Workaround: auf Linux waere pauschales -static
+# unnoetig und kann fehlende statische Systembibliotheken verursachen.
+if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_options(Coordinates PRIVATE -static)
 endif()

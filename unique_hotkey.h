@@ -2,12 +2,11 @@
 #include <iostream>
 #include <windows.h>
 #include <utility>
-#include <string>
 
 
 
 struct unique_hotkey {
-	//Konstruktoren
+	// Constructors
 	HWND window{};
 	int id{};
 	UINT modifier{};
@@ -19,21 +18,21 @@ struct unique_hotkey {
 	{
 		if (!RegisterHotKey(window, id, modifier, vk))
 		{
-			std::cout << "Ging nicht bro..";
+			std::cerr << "Failed to register hotkey (error code: " << GetLastError() << ")\n";
 			id = 0;
 		}
 	}
 
-	//Destruktoren
+	// Destructor
 	~unique_hotkey() {
 		reset();
 	}
 
-	//Kopieren
+	// Copying (deleted: a hotkey registration is unique)
 	unique_hotkey(const unique_hotkey& other) = delete;
 	unique_hotkey& operator=(const unique_hotkey& other) = delete;
 
-	//Verschieben
+	// Moving
 	unique_hotkey(unique_hotkey&& other) noexcept : window(std::exchange(other.window, nullptr)), id(std::exchange(other.id, 0)), modifier(std::exchange(other.modifier, 0u)), vk(std::exchange(other.vk, 0u)) {
 	}
 	unique_hotkey& operator=(unique_hotkey&& other) noexcept {

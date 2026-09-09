@@ -1,12 +1,15 @@
-# Build-Ordner ignorieren (ganz wichtig!)
+# Build-Output (CMake/Ninja) — pro Maschine unterschiedlich, wird immer neu generiert
 build/
-/build/
 
-# VS Code Einstellungen (optional, meistens will man die nicht teilen)
+# clangd-Index-Cache
+.cache/
+
+# Editor-Konfiguration (maschinenspezifisch, z.B. absolute Pfade)
 .vscode/
 
-# Kompilierte Dateien (falls mal was daneben landet)
-*.exe
-*.o
-*.a
-*.dll
+# Symlink auf die Compile-Datenbank im Projektroot (falls angelegt)
+/compile_commands.json
+
+# Windows-Dateisystem-Müll
+Thumbs.db
+desktop.ini
